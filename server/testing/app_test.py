@@ -14,7 +14,7 @@ class TestPlant:
     def test_plants_get_route_returns_list_of_plant_objects(self):
         '''returns JSON representing Plant objects at "/plants".'''
         with app.app_context():
-            p = Plant(name="Douglas Fir")
+            p = Plant(name="Douglas Fir", image="dummy_image", price=200.00)  # Assign appropriate value to image and price
             db.session.add(p)
             db.session.commit()
 
@@ -33,7 +33,7 @@ class TestPlant:
         '''allows users to create Plant records through the "/plants" POST route.'''
         response = app.test_client().post(
             '/plants',
-            json = {
+            json={
                 "name": "Live Oak",
                 "image": "https://www.nwf.org/-/media/NEW-WEBSITE/Shared-Folder/Wildlife/Plants-and-Fungi/plant_southern-live-oak_600x300.ashx",
                 "price": 250.00,
@@ -52,15 +52,30 @@ class TestPlant:
 
     def test_plant_by_id_get_route(self):
         '''has a resource available at "/plants/<int:id>".'''
-        response = app.test_client().get('/plants/1')
-        assert(response.status_code == 200)
+        with app.app_context():
+            p = Plant(name="Test Plant", image="dummy_image", price=100.00)  # Create a plant
+            db.session.add(p)
+            db.session.commit()
+
+            response = app.test_client().get(f'/plants/{p.id}')
+            assert(response.status_code == 200)  # Should be 200 now
+
+            db.session.delete(p)
+            db.session.commit()  # Cleanup: remove the plant we just created.
 
     def test_plant_by_id_get_route_returns_one_plant(self):
         '''returns JSON representing one Plant object at "/plants/<int:id>".'''
-        response = app.test_client().get('/plants/1')
-        data = json.loads(response.data.decode())
+        with app.app_context():
+            p = Plant(name="Test Plant", image="dummy_image", price=100.00)
+            db.session.add(p)
+            db.session.commit()
 
-        assert(type(data) == dict)
-        assert(data["id"])
-        assert(data["name"])
-                
+            response = app.test_client().get(f'/plants/{p.id}')
+            data = json.loads(response.data.decode())
+
+            assert(type(data) == dict)
+            assert(data["id"])
+            assert(data["name"])
+
+            db.session.delete(p)
+            db.session.commit()  # Cleanup: remove the plant we just created.
